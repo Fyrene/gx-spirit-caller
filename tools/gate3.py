@@ -29,15 +29,30 @@ Per-region sequence (the canonical CLAUDE.md re-verify command):
     [--clean: clean generated outputs; preserve downloaded tools]
     ninja sha1
 
-Then once: `pytest -q tests` (a hard gate). `--invariants`
+Then once: `tools/check_references.py` for the regions just built and
+`tools/check_fake_matches.py` (source lint, plus its check of the built objects),
+both hard gates (round 005: the factory acts on one verdict, so a separate
+evidence step it could skip is not a check); then `pytest -q tests` (a hard
+gate). `--invariants`
 additionally runs tools/check_match_invariants.py as an ADVISORY report (it
 never gates — see run_tests).
 
 Usage:
+    python tools/gate3.py --log PATH      # the documented form: full gate, transcript to PATH
     python tools/gate3.py                # full 3-region gate + invariants + tests
     python tools/gate3.py --scope eur     # one region (fast smoke)
     python tools/gate3.py --scope tests    # invariants + pytest only (wine-free)
     python tools/gate3.py --clean          # force a full rebuild each region
+
+The exit status survives the trip to the caller (round 004). Piping the gate
+through `tee` replaced its status with tee's own 0, and three rounds in a row a
+failed gate was reported as a pass. So:
+
+  * `--log PATH` writes the full transcript itself while still streaming to the
+    terminal, so no pipe is ever needed, in any shell.
+  * The transcript's last line is always `gate3: GATE EXIT <n>`, the status
+    this process is about to return. A pasted log carries its own verdict, and
+    a shell reporting 0 under `GATE EXIT 1` contradicts itself on sight.
 
 Exit codes:
     0   every requested region byte-identical (+ invariants/tests green)
@@ -52,7 +67,9 @@ from dataclasses import dataclass
 import json
 import subprocess
 import sys
+import traceback
 from pathlib import Path
+from typing import TextIO
 
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable  # the python3.13 running this script
@@ -322,23 +339,121 @@ def run_tests(invariants: bool) -> bool:
     return tests_ok
 
 
+def run_checkers(regions: list[str], *, source_lint: bool) -> dict[str, int]:
+    """Run the reference check and the fake-match lint; return name -> exit code.
+
+    The reference check needs the built regions. The lint always reads the
+    source and, with built regions, the built objects too. Exit 0 is a pass,
+    1 a finding, anything else (2: missing inputs) is an infrastructure error.
+    """
+    codes: dict[str, int] = {}
+    if regions:
+        cmd = [PY, "tools/check_references.py"]
+        for ver in regions:
+            cmd += ["--version", ver]
+        codes["references"] = run(cmd).returncode
+        print(f"[references] exit {codes['references']}", flush=True)
+    if source_lint:
+        cmd = [PY, "tools/check_fake_matches.py"]
+        for ver in regions:
+            cmd += ["--version", ver]
+        codes["fake-matches"] = run(cmd).returncode
+        print(f"[fake-matches] exit {codes['fake-matches']}", flush=True)
+    return codes
+
+
 def verdict(*, failed: list[str], checks_run: int, tests_ok: bool,
-            infrastructure: bool = False) -> tuple[str, int]:
+            infrastructure: bool = False,
+            checkers: dict[str, int] | None = None) -> tuple[str, int]:
     """Return the gate label and exit code from observable checks.
 
     A zero-check invocation is not a successful gate: it is a caller error
-    that must be surfaced distinctly from a real build or test failure.
+    that must be surfaced distinctly from a real build or test failure. A
+    checker exiting 1 is a finding (FAIL); any other non-zero exit is an
+    infrastructure error, never a pass.
     """
+    checkers = checkers or {}
     if checks_run == 0:
         return "VACUOUS", 2
-    if infrastructure:
+    if infrastructure or any(code not in (0, 1) for code in checkers.values()):
         return "INFRASTRUCTURE", 2
-    if failed or not tests_ok:
+    if failed or not tests_ok or any(code == 1 for code in checkers.values()):
         return "FAIL", 1
     return "PASS", 0
 
 
+class _Tee:
+    """A text stream that writes to the terminal stream and the log file."""
+
+    def __init__(self, stream: TextIO, log: TextIO) -> None:
+        self._stream = stream
+        self._log = log
+
+    def write(self, text: str) -> int:
+        self._stream.write(text)
+        self._log.write(text)
+        return len(text)
+
+    def flush(self) -> None:
+        self._stream.flush()
+        self._log.flush()
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._stream, name)
+
+
+def exit_line(code: int) -> str:
+    """The transcript's last line: the status the process returns."""
+    return f"gate3: GATE EXIT {code}"
+
+
 def main(argv: list[str] | None = None) -> int:
+    """Run the gate; always end the transcript with the status returned.
+
+    Every path out of the gate, including an argument error and an uncaught
+    exception, prints `exit_line(code)` last and returns that same code, both
+    to the terminal and, with `--log`, to the log file.
+    """
+    ap = build_parser()
+    try:
+        args = ap.parse_args(argv)
+    except SystemExit as exc:  # a usage error, before any log could be opened
+        code = exc.code if isinstance(exc.code, int) else 2
+        print(exit_line(code), flush=True)
+        return code
+    log: TextIO | None = None
+    saved = sys.stdout, sys.stderr
+    if args.log:
+        try:
+            log_path = Path(args.log)
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log = open(log_path, "w", encoding="utf-8", errors="replace")
+        except OSError as exc:
+            print(f"gate3: cannot open --log {args.log!r}: {exc}", file=sys.stderr)
+            print(exit_line(2), flush=True)
+            return 2
+        sys.stdout, sys.stderr = _Tee(saved[0], log), _Tee(saved[1], log)
+    try:
+        try:
+            code = _gate(ap, args)
+        except SystemExit as exc:
+            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+        except KeyboardInterrupt:
+            print("gate3: interrupted", file=sys.stderr, flush=True)
+            code = 130
+        except Exception:  # noqa: BLE001 - the status line must still be written
+            traceback.print_exc()
+            code = 1
+        sys.stderr.flush()
+        print(exit_line(code), flush=True)
+        return code
+    finally:
+        sys.stdout, sys.stderr = saved
+        if log is not None:
+            log.close()
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         description="Brain 3-region clean-tree `ninja sha1` gate driver."
     )
@@ -357,8 +472,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--invariants", action="store_true",
                     help="also run tools/check_match_invariants.py (ADVISORY only: "
                          "noisy, carries standing pre-existing drift, never gates)")
-    args = ap.parse_args(argv)
+    ap.add_argument("--log", metavar="PATH",
+                    help="also write the whole transcript to PATH (use this "
+                         "instead of piping through tee, which loses the exit status)")
+    return ap
 
+
+def _gate(ap: argparse.ArgumentParser, args: argparse.Namespace) -> int:
     if args.scope.lower() == "tests" and args.no_tests:
         ap.error(
             "GATE VACUOUS: --scope tests --no-tests would execute zero checks"
@@ -427,6 +547,16 @@ def main(argv: list[str] | None = None) -> int:
               if not result.ok]
     infrastructure = any(result.infrastructure for result in region_results)
 
+    # The reference check and the lint decide the verdict with the ROMs. They
+    # read only what the regions above built; a failed build has nothing to read.
+    checkers: dict[str, int] = {}
+    if regions and not failed:
+        print(f"\n{'=' * 20} reference check + fake-match lint {'=' * 20}", flush=True)
+        checkers = run_checkers(regions, source_lint=True)
+    elif not regions:
+        print(f"\n{'=' * 20} fake-match lint {'=' * 20}", flush=True)
+        checkers = run_checkers([], source_lint=True)
+
     tests_ok = True
     tests_ran = False
     if not args.no_tests and scope in ("all", "tests"):
@@ -448,15 +578,19 @@ def main(argv: list[str] | None = None) -> int:
 
     label, exit_code = verdict(
         failed=failed,
-        checks_run=len(regions) + int(tests_ran),
+        checks_run=len(regions) + int(tests_ran) + len(checkers),
         tests_ok=tests_ok,
         infrastructure=infrastructure,
+        checkers=checkers,
     )
     print(f"\n{'=' * 20} GATE {label} {'=' * 20}", flush=True)
     if failed and infrastructure:
         print(f"  infrastructure error in: {', '.join(failed)}", flush=True)
     elif failed:
         print(f"  diverging region(s): {', '.join(failed)}", flush=True)
+    for name, code in checkers.items():
+        if code != 0:
+            print(f"  {name} check did not pass (exit {code})", flush=True)
     if not tests_ok:
         print("  invariants/tests failed", flush=True)
     return exit_code
