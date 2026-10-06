@@ -1922,3 +1922,67 @@ addr	module	text_size	tier	shape	result	match_pct	park_class	park_family	brief	a
 0x02034a84	main	168	default	handle-encode	shipped	100	n/a		batch-01	1
 0x02034bd8	main	92	default	guard-dispatch	shipped	100	n/a		batch-01	2
 0x020358cc	main	136	default	staged-threshold-switch	shipped	100	n/a		batch-01	1
+0x02037328	main	80	default	entry-scan-other	shipped	100	n/a		batch-02	1
+0x020379f8	main	120	default	guarded-start-play	shipped	100	n/a		batch-02	1
+0x02037a70	main	72	default	status-query	shipped	100	n/a		batch-02	1
+0x02037b58	main	140	default	entry-lookup-by-id	shipped	100	n/a		batch-02	3
+0x02037be4	main	112	default	flags-to-kind	shipped	100	n/a		batch-02	1
+0x02037ca0	main	136	default	volume-scale-div	shipped	100	n/a		batch-02	1
+0x0203244c	main	116	default	ring-buffer-pop	parked	62.1	address-fold	PROVISIONAL:address-fold	batch-02	3
+0x0203671c	main	192	default	entry-reset-init	parked	91.7	P-36-literal-store-order	P-36	batch-02	6
+0x0203724c	main	220	default	select-active-entry	parked	38.2	P-20-family	P-20	batch-02	5
+0x02037fe4	main	248	default	entry-set-volume-dispatch	shipped	100	n/a		batch-02	2
+0x020380dc	main	140	default	entry-set-pan	shipped	100	n/a		batch-02	1
+0x020381bc	main	144	default	entry-set-params	shipped	100	n/a		batch-02	1
+0x020385f8	main	124	default	anim-step	shipped	100	n/a		batch-02	2
+0x020384e8	main	172	default	offset-table-sum	parked	53.5	P-20-family	P-20	batch-02	5
+0x02038674	main	128	default	anim-step-short	shipped	100	n/a		batch-02	1
+0x020387c0	main	80	default	group-reset-loop	shipped	100	n/a		batch-02	3
+0x02038810	main	224	default	group-anim-mask	shipped	100	n/a		batch-02	4
+0x02038908	main	80	default	rng-step-volatile	shipped	100	n/a		batch-02	3
+0x02038d70	main	60	default	slot-scan-next	shipped	100	n/a		batch-02	3
+0x02038ddc	main	124	default	slot-find-or-alloc	shipped	100	n/a		batch-02	3
+0x02039990	main	76	default	lookup-pair-bitfield	shipped	100	n/a		batch-02	2
+0x0203a780	main	204	default	item-list-dispatch	shipped	100	n/a		batch-02	3
+0x0203aae8	main	176	default	refcount-release-loop	parked	97.8	P-38-tentative-void-loop-trailing-epilogue	P-38	batch-02	5
+0x02038e58	main	228	default	archive-read-clamp	parked	43.1	load-scheduling-residual	PROVISIONAL:load-scheduling-residual	batch-02	4
+0x0203aeec	main	88	default	slot-lookup	shipped	100	n/a		batch-02	2
+0x0203b2f4	main	196	default	ima-adpcm-decode	shipped	100	n/a		batch-02	2
+0x0203b880	main	124	default	select-min-cost	shipped	100	n/a		batch-02	3
+0x0203b6b4	main	192	default	block-commit-copy	parked	70.8	P-20-family	P-20	batch-02	4
+0x0203bad0	main	220	default	slot-reserve-loop	shipped	100	n/a		batch-02	5
+0x0203c3dc	main	144	default	mutex-min-scan	shipped	100	n/a		batch-02	2
+0x0203c900	main	104	legacy	select-global-ptr	shipped	100	n/a		batch-02	2
+0x0203c730	main	160	default	peer-compare-loop	parked	10.0	address-fold	PROVISIONAL:address-fold	batch-02	3
+0x0203c89c	main	100	default	level-update-max	parked	64.0	P-31-if-conversion	P-31	batch-02	5
+0x0203cc58	main	224	legacy_sp3	state-dispatch	shipped	100	n/a		batch-02	1
+0x0203cff8	main	128	legacy_sp3	peer-update-copy	shipped	100	n/a		batch-02	3
+0x0203d078	main	104	legacy_sp3	host-slot-copy	shipped	100	n/a		batch-02	2
+0x0203d0e0	main	224	legacy_sp3	peer-find-by-mac	shipped	100	n/a		batch-02	3
+0x0203c730	main	160	legacy_sp3	peer-compare-loop	parked	90.0	P-20-family	P-20	batch-02	2
+0x0203d258	main	144	legacy_sp3	name-match-list	shipped	100	n/a		batch-02	5
+0x0203d2e8	main	180	legacy_sp3	mode-special-check	shipped	100	n/a		batch-02	1
+0x0203d5b0	main	248	legacy_sp3	info-fill-switch	shipped	100	n/a		batch-02	2
+0x0203d1c0	main	152	legacy_sp3	name-match-peers	parked	71.0	P-20-family	P-20	batch-02	4
+0x0203def0	main	152	legacy_sp3	peer-ready-count	shipped	100	n/a		batch-02	2
+0x0203e198	main	108	legacy_sp3	append-default-item	shipped	100	n/a		batch-02	3
+0x0203e204	main	80	legacy_sp3	default-name-check	shipped	100	n/a		batch-02	2
+0x0203e2f0	main	228	legacy_sp3	link-state-switch	shipped	100	n/a		batch-02	2
+0x0203e400	main	96	legacy_sp3	link-step-dispatch	shipped	100	n/a		batch-02	1
+0x0203e460	main	224	legacy_sp3	pick-free-slot	shipped	100	n/a		batch-02	3
+0x0203e870	main	72	legacy_sp3	retry-bump	shipped	100	n/a		batch-02	1
+0x0203e95c	main	80	legacy_sp3	tick-reset-start	shipped	100	n/a		batch-02	1
+0x0203eaa8	main	108	legacy_sp3	nth-set-bit	shipped	100	n/a		batch-02	4
+0x0203eb14	main	52	legacy_sp3	mask-set-bit	shipped	100	n/a		batch-02	1
+0x0203ed80	main	84	legacy_sp3	be32-byteswap	shipped	100	n/a		batch-02	1
+0x0203f590	main	256	legacy_sp3	xor-permute-decode	shipped	100	n/a		batch-02	3
+0x0203f6cc	main	76	legacy_sp3	decode-verify-copy	shipped	100	n/a		batch-02	1
+0x0203f30c	main	112	legacy	base64-char-decode-sub-add-immediate-fold	parked	25.0	unknown	UNCLASSIFIED:unknown	batch-02	3
+0x0203c89c	main	100	legacy_sp3	level-update-max	shipped	100	n/a		batch-02	2
+0x0203244c	main	116	legacy_sp3	ring-buffer-pop	parked	62.1	address-fold	PROVISIONAL:address-fold	batch-02	1
+0x0203671c	main	192	legacy_sp3	entry-reset-init	parked	72.9	ANDS-vs-TST-instruction-choice	PROVISIONAL:ands-vs-tst-instruction-choice	batch-02	1
+0x0203724c	main	220	legacy_sp3	select-active-entry	parked	0.0	frame-shape	PROVISIONAL:frame/epilogue	batch-02	1
+0x020384e8	main	172	legacy_sp3	offset-table-sum	parked	41.9	P-20-family	P-20	batch-02	1
+0x02038e58	main	228	legacy_sp3	archive-read-clamp	parked	56.1	P-31-if-conversion	P-31	batch-02	2
+0x0203aae8	main	176	legacy_sp3	refcount-release-loop	parked	14.6	unknown	UNCLASSIFIED:unknown	batch-02	1
+0x0203b6b4	main	192	legacy_sp3	block-commit-copy	parked	0.0	frame-shape	PROVISIONAL:frame/epilogue	batch-02	1
