@@ -1885,3 +1885,40 @@ addr	module	text_size	tier	shape	result	match_pct	park_class	park_family	brief	a
 0x0223fa20	ov002	296	default	per-player-row-lookup	parked	3.8	unknown	UNCLASSIFIED:unknown	cm-257-320-drain-5	2
 0x0221b3d8	ov002	280	default	per-player-row-lookup-switch	parked	17.14	unknown	UNCLASSIFIED:unknown	cm-257-320-drain-5	3
 0x0222a3e0	ov002	312	default	per-player-row-lookup	parked	17.95	unknown	UNCLASSIFIED:unknown	cm-257-320-drain-5	2
+0x0203058c	main	76	default	switch-classify	shipped	100	n/a		batch-01	2
+0x020312a0	main	184	default	membership-switch	shipped	100	n/a		batch-01	1
+0x020319a0	main	208	default	handler-table-dispatch	shipped	100	n/a		batch-01	2
+0x02031ab0	main	76	default	sorted-list-insert	shipped	100	n/a		batch-01	1
+0x02031ba0	main	124	default	list-unlink-callback	shipped	100	n/a		batch-01	1
+0x02031d98	main	232	default	queue-drain-loops	shipped	100	n/a		batch-01	2
+0x02031ebc	main	132	default	list-unlink	shipped	100	n/a		batch-01	2
+0x02031f9c	main	84	default	list-expire-loop	shipped	100	n/a		batch-01	1
+0x020320f8	main	184	default	list-push-front	shipped	100	n/a		batch-01	2
+0x0203276c	main	84	default	array-iterate-call	shipped	100	n/a		batch-01	1
+0x02032ac4	main	108	default	flag-update-callback	shipped	100	n/a		batch-01	2
+0x0203194c	main	84	default	u64-tag-counter	shipped	100	n/a		batch-01	3
+0x02031c1c	main	112	default	u64-flags-queue-insert	parked	78.6	P-20-dual-register-swap	P-20	batch-01	6
+0x02032998	main	68	default	subobj-queue-callback	parked	76.5	P-20-dual-register-swap	P-20	batch-01	4
+0x020326d4	main	80	default	subobj-alloc-memset	parked	70.0	address-fold	PROVISIONAL:address-fold	batch-01	4
+0x02032c78	main	80	default	flag-update-callback	shipped	100	n/a		batch-01	1
+0x02033718	main	88	default	flag-clear-register-handlers	shipped	100	n/a		batch-01	1
+0x02033770	main	72	default	flag-clear-register-handlers	shipped	100	n/a		batch-01	1
+0x020337b8	main	68	default	flag-clear-register-handlers	shipped	100	n/a		batch-01	1
+0x02033864	main	68	default	flag-toggle-query	shipped	100	n/a		batch-01	1
+0x020338b8	main	64	default	flag-clear-chain	shipped	100	n/a		batch-01	1
+0x020332a4	main	100	default	u16-string-copy	shipped	100	n/a		batch-01	2
+0x020334cc	main	112	default	lazy-handle-open	shipped	100	n/a		batch-01	2
+0x020336cc	main	76	default	register-handlers	shipped	100	n/a		batch-01	2
+0x02032b30	main	204	default	flag-update-callback-bool	shipped	100	n/a		batch-01	4
+0x02032d70	main	200	default	tick-interval-subobj-base	parked	4.0	address-fold	PROVISIONAL:address-fold	batch-01	4
+0x020339d4	main	116	default	bitmask-filter-loop	shipped	100	n/a		batch-01	1
+0x02033d78	main	112	default	array-state-step	shipped	100	n/a		batch-01	1
+0x02033f40	main	112	default	range-membership	shipped	100	n/a		batch-01	1
+0x02033fb0	main	100	default	range-membership	shipped	100	n/a		batch-01	1
+0x02033a48	main	56	default	tick-store-subobj-base	parked	14.3	address-fold	PROVISIONAL:address-fold	batch-01	3
+0x02033ac0	main	160	default	outparam-lookup-mask	parked	15.0	fold-predication-alloc	PROVISIONAL:predication/branch	batch-01	5
+0x020341b0	main	136	default	chunk-walk-dispatch	shipped	100	n/a		batch-01	1
+0x02034270	main	128	default	bitset-set-clear	shipped	100	n/a		batch-01	1
+0x02034a84	main	168	default	handle-encode	shipped	100	n/a		batch-01	1
+0x02034bd8	main	92	default	guard-dispatch	shipped	100	n/a		batch-01	2
+0x020358cc	main	136	default	staged-threshold-switch	shipped	100	n/a		batch-01	1
