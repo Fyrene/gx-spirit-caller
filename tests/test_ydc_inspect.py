@@ -129,7 +129,7 @@ class TestNitroFs(unittest.TestCase):
 
     def test_byte_perfect_verifier_rejects_invalid_deck(self):
         with self.assertRaisesRegex(ValueError, "deck/SS0101.ydc"):
-            verify_deck_roundtrips(fixture_rom(b"\\x00" * 13))
+            verify_deck_roundtrips(fixture_rom(b"\x00" * 13))
 
     def test_byte_perfect_verifier_rejects_missing_decks(self):
         rom = bytearray(fixture_rom())
