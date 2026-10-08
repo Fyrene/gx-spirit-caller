@@ -9,11 +9,16 @@ It requires Python 3.9+ and no additional dependencies.
 python contrib/ydc/inspect.py orig/baserom_eur.nds --stats
 python contrib/ydc/inspect.py orig/baserom_eur.nds --list
 python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --json
+python contrib/ydc/inspect.py orig/baserom_eur.nds --verify-roundtrip
 python -m unittest discover -s tests -p test_ydc_inspect.py
 ```
 
 The parser reads the NitroFS FNT/FAT in the NDS header, locates `deck/*.ydc`
-and parses each file. It never writes to its input and bundles **no** game
+and parses each file. `encode_ydc()` reconstructs each resource and preserves
+its eight-byte opaque prefix, three length fields, card order and duplicates.
+`--verify-roundtrip` compares each rebuilt resource byte for byte with its
+original NitroFS bytes, failing immediately on a difference.
+It never writes to its input and bundles **no** game
 binary data, extracted decks, card lists or decryption keys.
 
 ## Observed layout
@@ -36,8 +41,9 @@ not proven by identifying the game routines that load these sections.
 
 The EUR ROM with SHA-1 `1da50df7c210fae96dc69b3825554b9ce13b4f75`
 contains **143** `deck/*.ydc` files in NitroFS, including `deck/default.ydc`.
-All 143 parse completely with this layout; this is format validation, **not**
-proof of game semantics.
+All 143 parse completely **and round-trip byte-identically** with this layout.
+This is *resource-level* byte perfection for the EUR ROM, **not** the entire
+ROM reconstruction or proof of gameplay semantics.
 
 - 134 files have opaque prefix `01fc12004f57443f`; 9 have
   `01cccccc7f217741`. The significance is unknown.
@@ -57,10 +63,12 @@ python -m pytest -q tests/test_ydc_inspect.py
 python -m unittest discover -s tests -p test_ydc_inspect.py
 ```
 
-Synthetic tests cover duplicate IDs, both prefixes, empty/nonempty sections,
-truncation, wrong counts, extra bytes, NitroFS FNT/FAT, cycles and bad files.
-Running `--stats` against a personally supplied EUR ROM independently checks
-all 143 deck files. Do not commit ROMs, extracted binary decks or generated
+Synthetic tests cover round-trip equality, duplicate IDs, both prefixes,
+empty/nonempty sections, invalid encoder inputs, truncation, wrong counts,
+extra bytes, NitroFS FNT/FAT, cycles and bad files. Running
+`--verify-roundtrip` against a personally supplied EUR ROM checks all 143
+resource files byte for byte. There is no claim that USA/JPN decks or the
+full game build are byte-perfect. Do not commit ROMs, extracted binary decks or generated
 deck/card databases.
 
 Unresolved: meaning of the two prefix variants; confirming section semantics
