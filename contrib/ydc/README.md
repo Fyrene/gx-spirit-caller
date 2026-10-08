@@ -12,8 +12,10 @@ python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --json
 python contrib/ydc/inspect.py orig/baserom_eur.nds --verify-roundtrip
 python contrib/ydc/inspect.py orig/baserom_eur.nds --card 6313 --language F
 python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --names --language F
+python contrib/ydc/inspect.py orig/baserom_eur.nds --npc 69
 python -m unittest discover -s tests -p test_ydc_inspect.py
 python -m unittest discover -s tests -p test_ydc_card_names.py
+python -m unittest discover -s tests -p test_ydc_characters.py
 ```
 
 The parser reads the NitroFS FNT/FAT in the NDS header, locates `deck/*.ydc`
@@ -92,6 +94,37 @@ terminators, nonzero padding, duplicate IDs and invalid encoded strings.
 The ordinal/card join is verified by known named exemplars and complete
 cross-checks across all seven localized name tables.
 
+## Character/deck filename correlation (inferred, not confirmed at runtime)
+
+The European ROM contains `BSC/CharParam.inc`, a Shift-JIS text resource
+with numbered rows; comments identify characters by name. For instance,
+index 1 names Yuki Judai (Jaden Yuki), 5 Manjoume Jun (Chazz Princeton),
+69 Tanaka Natsuo, and 70 Katou Ryouta. The `SSCCVV.ydc` filenames contain
+a two-digit `CC` equal to these character indices, and a two-digit `VV`
+representing a deck variant. That interpretation of `VV` as a variant is
+supported by multiple decks sharing the same `CC`, but its exact in-game
+selection conditions are not yet reversed.
+
+`--npc CC` lists candidate decks and their Japanese source-table name.
+The tool reads the table from the ROM, *not* from a hardcoded copy. A script
+filename prefix `BSC/UCC_...` independently uses the same character index
+scheme for **48 out of 57 numbered deck groups**, providing further evidence
+of a shared naming convention. It still does not prove which deck file the
+engine chooses during a given duel.
+
+Of **143** EUR deck files, **138** match a named `CharParam` character:
+57 numbered deck groups in total, of which 54 have named characters.
+The unresolved resources are:
+
+- `deck/SS7101.ydc`: character 71 has no name in CharParam;
+- `deck/SS9801.ydc`, `deck/SS9802.ydc`, `deck/SS9901.ydc`:
+  character indices 98/99 lack entries in this 95-row table;
+- `deck/default.ydc`: no numeric character prefix.
+
+These are **unresolved**, never automatically attributed to a named NPC.
+Mapping the runtime deck loader and variant-selection logic remains future
+reverse engineering, outside this independent resource-analysis contribution.
+
 ## Verification and open questions
 
 ```sh
@@ -108,7 +141,7 @@ full game build are byte-perfect. Do not commit ROMs, extracted binary decks or 
 deck/card databases.
 
 Unresolved: meaning of the two prefix variants; confirming each counted deck
-section against the game's loading routines; linking deck filenames to NPCs;
+section against the game's loading routines; proving runtime deck selection;
 meaning of the high three bits in the card properties. Those items are not
 asserted by this standalone investigation.
 
