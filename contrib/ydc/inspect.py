@@ -11,6 +11,7 @@ Usage:
   python contrib/ydc/inspect.py orig/baserom_eur.nds --verify-roundtrip
   python contrib/ydc/inspect.py orig/baserom_eur.nds --card 6313 --language F
   python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --names --language F
+  python contrib/ydc/inspect.py orig/baserom_eur.nds --npc 69
 """
 
 import argparse
@@ -223,6 +224,8 @@ def main():
                         help="Require byte-identical parse/encode for every .ydc")
     action.add_argument("--deck", help="Select deck by name, e.g. SS0102")
     action.add_argument("--card", type=int, help="Look up one internal card ID")
+    action.add_argument("--npc", type=int,
+                        help="List candidate decks with character ID XX in SSXXYY")
     parser.add_argument("--json", action="store_true", help="Print JSON")
     parser.add_argument("--names", action="store_true",
                         help="Include localized card names for --deck")
@@ -237,6 +240,14 @@ def main():
                 count = verify_deck_roundtrips(rom)
             else:
                 decks = read_decks(rom)
+                if args.npc is not None:
+                    if __package__:
+                        from .characters import (match_deck_characters,
+                                                 read_character_parameters)
+                    else:
+                        from characters import (match_deck_characters,
+                                                read_character_parameters)
+                    character_names = read_character_parameters(rom, nds_files(rom))
                 if args.card is not None or args.names:
                     if __package__:
                         from .cards import read_card_names
@@ -267,6 +278,21 @@ def main():
                       f'extra={row["extra"]:2} side={row["side"]:2} '
                       f'header={row["header"]}')
             print(f"Validated {len(rows)} .ydc decks")
+    elif args.npc is not None:
+        if not 0 <= args.npc <= 99:
+            parser.error("--npc requires an ID between 0 and 99")
+        linked = [row for row in match_deck_characters(decks, character_names)
+                  if row["character_id"] == args.npc]
+        if not linked:
+            parser.error(f"No deck resources with character ID {args.npc:02d}")
+        result = {
+            "character_id": args.npc,
+            "character_name_ja": character_names.get(args.npc),
+            "association": "filename_index_match",
+            "note": "Naming correlation, not proof of runtime loading.",
+            "decks": linked,
+        }
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     elif args.card is not None:
         if args.card not in card_names:
             parser.error(f"Unknown internal card ID: {args.card}")
