@@ -5,14 +5,17 @@
 - Added independent, read-only NitroFS/.ydc inspector under `contrib/ydc/`.
 - Documented observed deck layout, including unknown header semantics and
   tentative section labels.
-- Added synthetic unit tests for valid decks and malformed data.
+- Added `encode_ydc()` and the `--verify-roundtrip` byte-for-byte validator.
+- Added synthetic tests for malformed data and strict round-trip equality.
 - No changes to build, matcher, ARM source, symbols, delinks or baselines.
 
 ## Checked
 
-- `python -m pytest -q tests/test_ydc_inspect.py`: 12 passed, 14 subtests.
-- `python -m unittest discover -s tests -p test_ydc_inspect.py`: 12 passed.
+- `python -m pytest -q tests/test_ydc_inspect.py`: 21 passed, 25 subtests.
+- `python -m unittest discover -s tests -p test_ydc_inspect.py`: 21 passed.
 - `python -m py_compile contrib/ydc/inspect.py`: passed.
+- `python contrib/ydc/inspect.py <owned EUR .nds> --verify-roundtrip`: 143/143
+  deck files reproduced byte-identically (14,076 bytes; zero mismatches).
 - `python contrib/ydc/inspect.py <owned EUR .nds> --stats`: 143 decks parsed;
   two observed opaque headers; side-section length 0 in all 143 files.
 
