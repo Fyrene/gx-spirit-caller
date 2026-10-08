@@ -114,6 +114,7 @@ def verify_deck_roundtrips(rom):
         raise ValueError("No deck/*.ydc files found")
     return verified
 
+
 def nds_files(rom):
     """Return path -> (start, end) for NitroFS FNT and FAT entries.
 
