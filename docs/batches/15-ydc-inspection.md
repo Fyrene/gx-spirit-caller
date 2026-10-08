@@ -6,13 +6,14 @@
 - Documented observed deck layout, including unknown header semantics and
   tentative section labels.
 - Added `encode_ydc()` and the `--verify-roundtrip` byte-for-byte validator.
-- Added synthetic tests for malformed data and strict round-trip equality.
+- Added synthetic tests for malformed data and strict round-trip equality,
+  including a negative control which injects one wrong byte and verifies detection.
 - No changes to build, matcher, ARM source, symbols, delinks or baselines.
 
 ## Checked
 
-- `python -m pytest -q tests/test_ydc_inspect.py`: 21 passed, 25 subtests.
-- `python -m unittest discover -s tests -p test_ydc_inspect.py`: 21 passed.
+- `python -m pytest -q tests/test_ydc_inspect.py`: 22 passed, 25 subtests.
+- `python -m unittest discover -s tests -p test_ydc_inspect.py`: 22 passed.
 - `python -m py_compile contrib/ydc/inspect.py`: passed.
 - `python contrib/ydc/inspect.py <owned EUR .nds> --verify-roundtrip`: 143/143
   deck files reproduced byte-identically (14,076 bytes; zero mismatches).
