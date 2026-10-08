@@ -3,7 +3,10 @@
 import struct
 import unittest
 
-from contrib.ydc.inspect import nds_files, parse_ydc, read_decks, summarize
+from contrib.ydc.inspect import (
+    encode_ydc, nds_files, parse_ydc, read_decks, summarize,
+    verify_deck_roundtrips,
+)
 
 
 PREFIX = bytes.fromhex("01fc12004f57443f")
@@ -45,6 +48,44 @@ class TestYdcParser(unittest.TestCase):
         self.assertEqual((parsed["main_count"], parsed["extra_count"],
                           parsed["side_count"]), (3, 1, 1))
 
+    def test_roundtrip_preserves_duplicate_ids_and_all_sections(self):
+        original = fixture_deck((4006, 4006, 0, 65535), (5555,), (1234, 0))
+        self.assertEqual(encode_ydc(parse_ydc(original)), original)
+
+    def test_roundtrip_preserves_both_headers(self):
+        for header in (PREFIX, bytes.fromhex("01cccccc7f217741")):
+            with self.subTest(header=header.hex()):
+                original = fixture_deck((4000, 5000), header=header)
+                self.assertEqual(encode_ydc(parse_ydc(original)), original)
+
+    def test_encoder_rejects_count_mismatch(self):
+        deck = parse_ydc(fixture_deck((1234,)))
+        deck["main_count"] = 2
+        with self.assertRaisesRegex(ValueError, "main_count"):
+            encode_ydc(deck)
+
+    def test_encoder_rejects_invalid_card_ids(self):
+        for invalid in (-1, 65536, "1234", 12.3, True):
+            with self.subTest(invalid=invalid):
+                deck = parse_ydc(fixture_deck((1234,)))
+                deck["main_card_ids"][0] = invalid
+                with self.assertRaisesRegex(ValueError, "u16"):
+                    encode_ydc(deck)
+
+    def test_encoder_rejects_bad_headers(self):
+        for invalid in ("ff", "00" * 9, "zz" * 8, "00 00 00 00 00 00 00 0"):
+            with self.subTest(invalid=invalid):
+                deck = parse_ydc(fixture_deck())
+                deck["header_hex"] = invalid
+                with self.assertRaises(ValueError):
+                    encode_ydc(deck)
+
+    def test_encoder_rejects_missing_fields(self):
+        deck = parse_ydc(fixture_deck())
+        del deck["side_card_ids"]
+        with self.assertRaisesRegex(ValueError, "Missing deck field"):
+            encode_ydc(deck)
+
     def test_alternative_header_remains_opaque(self):
         other = bytes.fromhex("01cccccc7f217741")
         self.assertEqual(parse_ydc(fixture_deck(header=other))["header_hex"], other.hex())
@@ -82,6 +123,19 @@ class TestNitroFs(unittest.TestCase):
         self.assertEqual(decks["deck/SS0101.ydc"]["main_card_ids"],
                          [4006, 4006, 6953])
         self.assertEqual(summarize(decks)["deck_count"], 1)
+
+    def test_byte_perfect_verifier_on_synthetic_rom(self):
+        self.assertEqual(verify_deck_roundtrips(fixture_rom()), 1)
+
+    def test_byte_perfect_verifier_rejects_invalid_deck(self):
+        with self.assertRaisesRegex(ValueError, "deck/SS0101.ydc"):
+            verify_deck_roundtrips(fixture_rom(b"\\x00" * 13))
+
+    def test_byte_perfect_verifier_rejects_missing_decks(self):
+        rom = bytearray(fixture_rom())
+        rom[0xB1:0xB1 + 10] = b"SS0101.bin"
+        with self.assertRaisesRegex(ValueError, "No deck"):
+            verify_deck_roundtrips(rom)
 
     def test_truncated_header(self):
         with self.assertRaisesRegex(ValueError, "too short"):
