@@ -2,6 +2,7 @@
 
 import struct
 import unittest
+from unittest.mock import patch
 
 from contrib.ydc.inspect import (
     encode_ydc, nds_files, parse_ydc, read_decks, summarize,
@@ -126,6 +127,18 @@ class TestNitroFs(unittest.TestCase):
 
     def test_byte_perfect_verifier_on_synthetic_rom(self):
         self.assertEqual(verify_deck_roundtrips(fixture_rom()), 1)
+
+    def test_byte_perfect_verifier_detects_encoder_corruption(self):
+        real_encoder = encode_ydc
+
+        def bad_encoder(deck):
+            data = bytearray(real_encoder(deck))
+            data[-1] ^= 1
+            return bytes(data)
+
+        with patch("contrib.ydc.inspect.encode_ydc", side_effect=bad_encoder):
+            with self.assertRaisesRegex(ValueError, "round-trip differs"):
+                verify_deck_roundtrips(fixture_rom())
 
     def test_byte_perfect_verifier_rejects_invalid_deck(self):
         with self.assertRaisesRegex(ValueError, "deck/SS0101.ydc"):
