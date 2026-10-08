@@ -118,7 +118,7 @@ The unresolved resources are:
 
 - `deck/SS7101.ydc`: character 71 has no name in CharParam;
 - `deck/SS9801.ydc`, `deck/SS9802.ydc`, `deck/SS9901.ydc`:
-  character indices 98/99 lack entries in this 95-row table;
+  character indices 98/99 lack entries in this 96-row table (indices 0–95);
 - `deck/default.ydc`: no numeric character prefix.
 
 These are **unresolved**, never automatically attributed to a named NPC.
