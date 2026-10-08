@@ -9,6 +9,8 @@ Usage:
   python contrib/ydc/inspect.py orig/baserom_eur.nds --list
   python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --json
   python contrib/ydc/inspect.py orig/baserom_eur.nds --verify-roundtrip
+  python contrib/ydc/inspect.py orig/baserom_eur.nds --card 6313 --language F
+  python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --names --language F
 """
 
 import argparse
@@ -220,14 +222,27 @@ def main():
     action.add_argument("--verify-roundtrip", action="store_true",
                         help="Require byte-identical parse/encode for every .ydc")
     action.add_argument("--deck", help="Select deck by name, e.g. SS0102")
+    action.add_argument("--card", type=int, help="Look up one internal card ID")
     parser.add_argument("--json", action="store_true", help="Print JSON")
+    parser.add_argument("--names", action="store_true",
+                        help="Include localized card names for --deck")
+    parser.add_argument("--language", choices=("E", "F", "G", "I", "S", "J", "R"),
+                        default="F", help="Card name language (default: F)")
     args = parser.parse_args()
+    if args.names and not args.deck:
+        parser.error("--names requires --deck")
     with args.rom.open("rb") as stream:
         with mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as rom:
             if args.verify_roundtrip:
                 count = verify_deck_roundtrips(rom)
             else:
                 decks = read_decks(rom)
+                if args.card is not None or args.names:
+                    if __package__:
+                        from .cards import read_card_names
+                    else:
+                        from cards import read_card_names
+                    card_names = read_card_names(rom, nds_files(rom), args.language)
     if args.verify_roundtrip:
         print(f"BYTE-PERFECT PASS: {count}/{count} deck/*.ydc files match exactly")
     elif args.stats:
@@ -252,13 +267,29 @@ def main():
                       f'extra={row["extra"]:2} side={row["side"]:2} '
                       f'header={row["header"]}')
             print(f"Validated {len(rows)} .ydc decks")
+    elif args.card is not None:
+        if args.card not in card_names:
+            parser.error(f"Unknown internal card ID: {args.card}")
+        card = {"id": args.card, "name": card_names[args.card],
+                "language": args.language}
+        if args.json:
+            print(json.dumps(card, indent=2, ensure_ascii=False))
+        else:
+            print(f'{card["id"]}: {card["name"]} ({args.language})')
     else:
         path = args.deck if args.deck.endswith(".ydc") else args.deck + ".ydc"
         if not path.startswith("deck/"):
             path = "deck/" + path
         if path not in decks:
             parser.error(f"Deck not found: {path}")
-        print(json.dumps({"file": path, **decks[path]}, indent=2))
+        deck = {"file": path, **decks[path]}
+        if args.names:
+            for section in ("main", "extra", "side"):
+                deck[f"{section}_cards"] = [
+                    {"id": card_id, "name": card_names[card_id]}
+                    for card_id in deck[f"{section}_card_ids"]
+                ]
+        print(json.dumps(deck, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
