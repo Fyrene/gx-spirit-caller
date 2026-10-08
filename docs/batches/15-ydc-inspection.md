@@ -11,6 +11,9 @@
 - Added `--card <ID> --language F` and `--deck <name> --names` commands;
   no card data is committed.
 - Added fourteen synthetic card-table tests.
+- Added `characters.py` reading the numbered CP932 CharParam source and
+  correlating filename prefixes to character indices without asserting
+  runtime ownership. Added `--npc <ID>` lookup and nine isolated tests.
 - Added synthetic tests for malformed data and strict round-trip equality,
   including a negative control which injects one wrong byte and verifies detection.
 - No changes to build, matcher, ARM source, symbols, delinks or baselines.
@@ -20,6 +23,15 @@
 - `python -m unittest -q tests/test_ydc_card_names.py`: 14 passed locally.
 - Local EUR ROM: 1,459 names per language, seven language variants; all
   916 distinct deck IDs resolved with zero missing in each.
+- `python -m unittest discover -s /mnt/data/ydc_local -p test_*.py -v`:
+  nine character-mapping tests passed locally (after correcting an initial
+  invalid-CP932 test fixture). Python syntax compilation passed.
+- Local EUR ROM: 69 named CharParam rows; 138/143 deck files mapped
+  through `SSCCVV` indices (54 of 57 numbered groups). The five
+  unmatched files are recorded in the README.
+- Local EUR NitroFS: 48/57 deck groups use the same character index in
+  `BSC/UCC_...` event script filenames, independently corroborating the
+  index naming scheme.
 - `python -m pytest -q tests/test_ydc_inspect.py`: 22 passed, 25 subtests.
 - `python -m unittest discover -s tests -p test_ydc_inspect.py`: 22 passed.
 - `python -m py_compile contrib/ydc/inspect.py`: passed.
@@ -32,6 +44,8 @@
 
 - Repository-wide pytest/unittest/ruff/fw checks (full repository not available
   in the execution environment); the tool and tests are independent.
+- Full-repository tests and the new CLI have not been rerun in a local full
+  checkout; only the standalone parser module was exercised.
 - USA or JPN versions (not supplied); no claim about their card tables.
   The meaning of the upper three card-property bits and exact loader
   semantics remain unknown.
