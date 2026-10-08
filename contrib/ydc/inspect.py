@@ -8,6 +8,7 @@ Usage:
   python contrib/ydc/inspect.py orig/baserom_eur.nds --stats
   python contrib/ydc/inspect.py orig/baserom_eur.nds --list
   python contrib/ydc/inspect.py orig/baserom_eur.nds --deck SS0102 --json
+  python contrib/ydc/inspect.py orig/baserom_eur.nds --verify-roundtrip
 """
 
 import argparse
@@ -58,6 +59,60 @@ def parse_ydc(data):
         "side_card_ids": sections[2],
     }
 
+
+def encode_ydc(deck):
+    """Re-encode a parsed deck, preserving its opaque eight-byte prefix."""
+    try:
+        header_hex = deck["header_hex"]
+        if not isinstance(header_hex, str) or len(header_hex) != 16:
+            raise ValueError("header_hex must have exactly 16 hex characters")
+        try:
+            header = bytes.fromhex(header_hex)
+        except ValueError as exc:
+            raise ValueError("header_hex is not hexadecimal") from exc
+        if len(header) != 8:
+            raise ValueError("header_hex must represent exactly 8 bytes")
+        result = bytearray(header)
+        for section in ("main", "extra", "side"):
+            values = deck[f"{section}_card_ids"]
+            count = deck[f"{section}_count"]
+            if not isinstance(values, (list, tuple)):
+                raise ValueError(f"{section}_card_ids must be a sequence")
+            if type(count) is not int or count != len(values) or count > 0xFFFF:
+                raise ValueError(f"{section}_count does not match card IDs")
+            if any(type(card_id) is not int or not 0 <= card_id <= 0xFFFF
+                   for card_id in values):
+                raise ValueError(f"{section}_card_ids must contain u16 integers")
+            result.extend(struct.pack("<H", count))
+            result.extend(struct.pack(f"<{count}H", *values))
+        return bytes(result)
+    except KeyError as exc:
+        raise ValueError(f"Missing deck field: {exc.args[0]}") from exc
+
+
+def verify_deck_roundtrips(rom):
+    """Compare parsed/re-encoded deck bytes to each original NitroFS file."""
+    files = nds_files(rom)
+    verified = 0
+    for path in sorted(files):
+        if not (path.startswith("deck/") and path.lower().endswith(".ydc")):
+            continue
+        start, end = files[path]
+        original = bytes(rom[start:end])
+        try:
+            rebuilt = encode_ydc(parse_ydc(original))
+        except ValueError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
+        if rebuilt != original:
+            mismatch = next((i for i, (a, b) in
+                             enumerate(zip(original, rebuilt)) if a != b),
+                            min(len(original), len(rebuilt)))
+            raise ValueError(f"{path}: round-trip differs at byte 0x{mismatch:x} "
+                             f"(original {len(original)} bytes, rebuilt {len(rebuilt)})")
+        verified += 1
+    if verified == 0:
+        raise ValueError("No deck/*.ydc files found")
+    return verified
 
 def nds_files(rom):
     """Return path -> (start, end) for NitroFS FNT and FAT entries.
@@ -161,13 +216,20 @@ def main():
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--list", action="store_true", help="Validate and list all decks")
     action.add_argument("--stats", action="store_true", help="Validate and summarize all decks")
+    action.add_argument("--verify-roundtrip", action="store_true",
+                        help="Require byte-identical parse/encode for every .ydc")
     action.add_argument("--deck", help="Select deck by name, e.g. SS0102")
     parser.add_argument("--json", action="store_true", help="Print JSON")
     args = parser.parse_args()
     with args.rom.open("rb") as stream:
         with mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as rom:
-            decks = read_decks(rom)
-    if args.stats:
+            if args.verify_roundtrip:
+                count = verify_deck_roundtrips(rom)
+            else:
+                decks = read_decks(rom)
+    if args.verify_roundtrip:
+        print(f"BYTE-PERFECT PASS: {count}/{count} deck/*.ydc files match exactly")
+    elif args.stats:
         stats = summarize(decks)
         if args.json:
             print(json.dumps(stats, indent=2))
