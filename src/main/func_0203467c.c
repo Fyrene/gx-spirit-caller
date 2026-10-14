@@ -1,6 +1,3 @@
-/* Candidate V3: preserve a shared epilogue and avoid early allocation-failure return.
- * Unverified: compare compiled ARM against original; do not ship without gates.
- */
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
